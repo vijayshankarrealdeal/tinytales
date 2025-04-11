@@ -1,0 +1,14 @@
+scikit-learn
+numpy
+alembic
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+PyJWT
+bcrypt
+passlib
+asyncpg
+pandas
+psycopg2-binary
+python-dotenv

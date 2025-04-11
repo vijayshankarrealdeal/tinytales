@@ -42,7 +42,7 @@ class Auth:
         user_data.password = pwd_context.hash(user_data.password)
         try:
             user_data = User(
-                username=user_data.username,
+                fullname=user_data.fullname,
                 email=user_data.email,
                 password=user_data.password,
             )
@@ -54,8 +54,7 @@ class Auth:
             session.rollback()
 
     async def login(self, user_data: UserLogin, session: AsyncSession):
-
-        query = select(User).where(User.username == user_data.username)
+        query = select(User).where(User.email == user_data.email)
         result = await session.execute(query)
         user_data_db = result.scalar_one_or_none()
         if not user_data_db:

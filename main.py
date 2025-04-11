@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-
+import json
 from routes.api_router import router
 
 app = FastAPI()

@@ -3,6 +3,16 @@ from db.db_connect import Base
 from sqlalchemy import Column, Integer, Text, ForeignKey, TIMESTAMP, func
 
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    username = Column(Text, nullable=False)
+    email = Column(Text, nullable=False, unique=True)
+    password = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+
 class Palette(Base):
     __tablename__ = "palettes"
 

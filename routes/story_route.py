@@ -4,15 +4,20 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from db.db_connect import get_db
 from db.db_models import Story, StoryChapter, Palette
 from models.payload_base import PayloadBaseIn, PayloadBaseOut
+from engine.auth_managers import oauth2_scheme
+
 
 story_router = APIRouter()
 
 
-@story_router.post("/add_story", status_code=status.HTTP_201_CREATED)
+@story_router.post(
+    "/add_story",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(oauth2_scheme)],
+)
 async def add_story(story: PayloadBaseIn, session: AsyncSession = Depends(get_db)):
     try:
         story_payload = await PayloadBaseOut.create(story)
@@ -21,7 +26,7 @@ async def add_story(story: PayloadBaseIn, session: AsyncSession = Depends(get_db
     try:
         poster_palette_obj = Palette(**story_payload.poster_pallet.model_dump())
         session.add(poster_palette_obj)
-        await session.flush() 
+        await session.flush()
     except Exception as e:
         print(f"Poster palette insert error: {e}")
         raise HTTPException(status_code=400, detail=f"Poster palette insert error: {e}")
@@ -80,13 +85,16 @@ async def add_story(story: PayloadBaseIn, session: AsyncSession = Depends(get_db
 @story_router.get(
     "/fetch_story",
     status_code=status.HTTP_200_OK,
-    response_model=List[PayloadBaseOut]
+    response_model=List[PayloadBaseOut],
+    dependencies=[Depends(oauth2_scheme)],
 )
 async def get_story(
     story_id: Optional[int] = None,
     offset: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return"),
-    session: AsyncSession = Depends(get_db)
+    limit: int = Query(
+        10, ge=1, le=100, description="Maximum number of records to return"
+    ),
+    session: AsyncSession = Depends(get_db),
 ):
     if story_id:
         query = (
@@ -94,19 +102,21 @@ async def get_story(
             .where(Story.id == story_id)
             .options(
                 joinedload(Story.poster_pallet),
-                joinedload(Story.chapters).joinedload(StoryChapter.image_pallet)
+                joinedload(Story.chapters).joinedload(StoryChapter.image_pallet),
             )
         )
         result = await session.execute(query)
         stories = result.scalars().unique().all()
         if not stories:
-            raise HTTPException(status_code=404, detail="No story found for the given id")
+            raise HTTPException(
+                status_code=404, detail="No story found for the given id"
+            )
     else:
         query = (
             select(Story)
             .options(
                 joinedload(Story.poster_pallet),
-                joinedload(Story.chapters).joinedload(StoryChapter.image_pallet)
+                joinedload(Story.chapters).joinedload(StoryChapter.image_pallet),
             )
             .offset(offset)
             .limit(limit)
@@ -115,4 +125,3 @@ async def get_story(
         stories = result.scalars().unique().all()
 
     return stories
-

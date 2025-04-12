@@ -1,1 +1,1 @@
-from db.db_models import StoryDBTable, StoryChapterDBTable, PaletteDBTable, UserDBTable, ShortVideoDBTable
+from db.db_models import Story, StoryChapter, ShortVideo, Palette, User

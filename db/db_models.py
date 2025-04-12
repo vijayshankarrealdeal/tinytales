@@ -3,7 +3,7 @@ from db.db_connect import Base
 from sqlalchemy import Column, Integer, Text, ForeignKey, TIMESTAMP, func
 
 
-class UserDBTable(Base):
+class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     fullname = Column(Text, nullable=False)
@@ -13,7 +13,7 @@ class UserDBTable(Base):
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
 
-class PaletteDBTable(Base):
+class Palette(Base):
     __tablename__ = "palettes"
 
     id = Column(Integer, primary_key=True)
@@ -33,7 +33,7 @@ class PaletteDBTable(Base):
         )
 
 
-class StoryDBTable(Base):
+class Story(Base):
     __tablename__ = "stories"
 
     id = Column(Integer, primary_key=True)
@@ -53,7 +53,7 @@ class StoryDBTable(Base):
         return f"<Story(id={self.id}, title={self.title})>"
 
 
-class StoryChapterDBTable(Base):
+class StoryChapter(Base):
     __tablename__ = "story_chapters"
 
     id = Column(Integer, primary_key=True)
@@ -73,7 +73,7 @@ class StoryChapterDBTable(Base):
         return f"<StoryChapter(id={self.id}, chapter_index={self.chapter_index})>"
 
 
-class ShortVideoDBTable(Base):
+class ShortVideo(Base):
     __tablename__ = "short_videos"
 
     id = Column(Integer, primary_key=True)

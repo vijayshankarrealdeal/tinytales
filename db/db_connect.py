@@ -15,6 +15,8 @@ DATABASE_URL = (
     f"{os.environ.get('database', 'child')}"
 )
 
+DATABASE_URL = "postgresql+asyncpg://tinytales_user:Vm8lSckECQl0EMr3KcCozFn9NMieZm9P@dpg-cvt43tqdbo4c73chu12g-a.oregon-postgres.render.com/tinytales"
+
 # Create the async engine
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 

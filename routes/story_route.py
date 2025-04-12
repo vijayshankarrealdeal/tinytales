@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.db_connect import get_db
-from db.db_models import Story, StoryChapter, Palette
+from db.db_models import StoryDBTable, StoryChapterDBTable, PaletteDBTable
 from models.payload_base import PayloadBaseIn, PayloadBaseOut
 from engine.auth_managers import oauth2_scheme
 
@@ -24,14 +24,14 @@ async def add_story(story: PayloadBaseIn, session: AsyncSession = Depends(get_db
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Payload creation error: {e}")
     try:
-        poster_palette_obj = Palette(**story_payload.poster_pallet.model_dump())
+        poster_palette_obj = PaletteDBTable(**story_payload.poster_pallet.model_dump())
         session.add(poster_palette_obj)
         await session.flush()
     except Exception as e:
         print(f"Poster palette insert error: {e}")
         raise HTTPException(status_code=400, detail=f"Poster palette insert error: {e}")
 
-    new_story = Story(
+    new_story = StoryDBTable(
         title=story_payload.title,
         poster=story_payload.poster,
         poster_pallet=poster_palette_obj,
@@ -39,11 +39,11 @@ async def add_story(story: PayloadBaseIn, session: AsyncSession = Depends(get_db
 
     for idx, chapter_data in enumerate(story_payload.chapters):
         try:
-            chapter_palette_obj = Palette(**chapter_data.image_pallet.model_dump())
+            chapter_palette_obj = PaletteDBTable(**chapter_data.image_pallet.model_dump())
             session.add(chapter_palette_obj)
             await session.flush()  # flush so palette gets an ID
 
-            chapter = StoryChapter(
+            chapter = StoryChapterDBTable(
                 chapter_index=idx,
                 content=chapter_data.content,
                 image=chapter_data.image,
@@ -98,11 +98,11 @@ async def get_story(
 ):
     if story_id:
         query = (
-            select(Story)
-            .where(Story.id == story_id)
+            select(StoryDBTable)
+            .where(StoryDBTable.id == story_id)
             .options(
-                joinedload(Story.poster_pallet),
-                joinedload(Story.chapters).joinedload(StoryChapter.image_pallet),
+                joinedload(StoryDBTable.poster_pallet),
+                joinedload(StoryDBTable.chapters).joinedload(StoryChapterDBTable.image_pallet),
             )
         )
         result = await session.execute(query)
@@ -113,10 +113,10 @@ async def get_story(
             )
     else:
         query = (
-            select(Story)
+            select(StoryDBTable)
             .options(
-                joinedload(Story.poster_pallet),
-                joinedload(Story.chapters).joinedload(StoryChapter.image_pallet),
+                joinedload(StoryDBTable.poster_pallet),
+                joinedload(StoryDBTable.chapters).joinedload(StoryChapterDBTable.image_pallet),
             )
             .offset(offset)
             .limit(limit)

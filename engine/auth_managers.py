@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.db_models import User
+from db.db_models import UserDBTable
 from models.auth_model import UserLogin, UserRegister
 from db.db_connect import async_session
 
@@ -16,7 +16,7 @@ from db.db_connect import async_session
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-class Auth:
+class AuthManager:
     @staticmethod
     def encode_token(user_data):
         payload = {
@@ -32,7 +32,7 @@ class Auth:
     @staticmethod
     async def get_user(user_id, session):
         try:
-            query = select(User).where(User.id == user_id)
+            query = select(UserDBTable).where(UserDBTable.id == user_id)
             user_data = await session.execute(query)
             return user_data
         except HTTPException as e:
@@ -41,7 +41,7 @@ class Auth:
     async def register(self, user_data: UserRegister, session: AsyncSession):
         user_data.password = pwd_context.hash(user_data.password)
         try:
-            user_data = User(
+            user_data = UserDBTable(
                 fullname=user_data.fullname,
                 email=user_data.email,
                 password=user_data.password,
@@ -54,7 +54,7 @@ class Auth:
             session.rollback()
 
     async def login(self, user_data: UserLogin, session: AsyncSession):
-        query = select(User).where(User.email == user_data.email)
+        query = select(UserDBTable).where(UserDBTable.email == user_data.email)
         result = await session.execute(query)
         user_data_db = result.scalar_one_or_none()
         if not user_data_db:
@@ -76,7 +76,7 @@ class CustomHTTPBearer(HTTPBearer):
 
             # Open a new asynchronous session to query for the user.
             async with async_session() as session:
-                stmt = select(User).where(User.id == user_id)
+                stmt = select(UserDBTable).where(UserDBTable.id == user_id)
                 result = await session.execute(stmt)
                 user_data = result.scalar_one_or_none()
                 if not user_data:

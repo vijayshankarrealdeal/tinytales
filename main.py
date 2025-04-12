@@ -5,26 +5,19 @@ from routes.api_router import router
 
 app = FastAPI()
 
-# Allow origins (adjust for production)
-origins = [
-    "https://tinytales-1847a.web.app/",  # <-- for development; in production, use your frontend URL
-    # "https://your-flutter-app.web.app",
-    # "https://tinytales.web.app"
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Allowed origins
+    allow_origins=["*", "https://tinytales-1847a.web.app","https://tinytales-1847a.firebaseapp.com/"],  # Your Flutter web domain
     allow_credentials=True,
-    allow_methods=["*"],    # GET, POST, PUT, DELETE, etc.
-    allow_headers=["*"],    # Authorization, Content-Type, etc.
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
 app.include_router(router)
 
 
-    
 @app.get("/video_story")
 def get_video_story():
     file_path = "data_link.json"

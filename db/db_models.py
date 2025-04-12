@@ -71,3 +71,17 @@ class StoryChapter(Base):
 
     def __repr__(self):
         return f"<StoryChapter(id={self.id}, chapter_index={self.chapter_index})>"
+
+
+class ShortVideo(Base):
+    __tablename__ = "short_videos"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(Text, nullable=False)
+    url = Column(Text, nullable=False)
+    views = Column(Integer, default=0)
+    likes = Column(Integer, default=0)
+    filename = Column(Text, nullable=False)  # Filename or path to the video file
+
+    def __repr__(self):
+        return f"<ShortVideo(id={self.id}, title={self.title})>"

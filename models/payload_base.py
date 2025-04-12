@@ -78,6 +78,7 @@ class PalletPayload(BaseModel):
 
 
 class StoryPayload(StoryPayloadIn):
+    id: int
     image_pallet: PalletPayload
 
     @classmethod
@@ -87,6 +88,7 @@ class StoryPayload(StoryPayloadIn):
 
 
 class PayloadBaseOut(BaseModel):
+    id: int
     title: str
     poster: str
     poster_pallet: PalletPayload
@@ -108,6 +110,7 @@ class PayloadBaseOut(BaseModel):
         poster_palette, story_objs = await asyncio.gather(
             poster_task, asyncio.gather(*story_tasks)
         )
+        
         return cls(
             title=data.title,
             poster=poster_path,

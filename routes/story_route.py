@@ -123,5 +123,6 @@ async def get_story(
         )
         result = await session.execute(query)
         stories = result.scalars().unique().all()
-
+        for i in stories:
+            i.chapters = sorted(i.chapters, key=lambda x: x.id)
     return stories

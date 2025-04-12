@@ -9,7 +9,7 @@ from engine.auth_managers import oauth2_scheme
 short_video_router = APIRouter(tags=["short_video"])
 
 
-@short_video_router.post(
+@short_video_router.get(
     "/get_videos",
     status_code=status.HTTP_201_CREATED,
     response_model=List[ShortVideoOutput],

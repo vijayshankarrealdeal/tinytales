@@ -16,11 +16,3 @@ app.add_middleware(
 
 
 app.include_router(router)
-
-
-@app.get("/video_story")
-def get_video_story():
-    file_path = "data_link.json"
-    with open(file_path, "r") as f:
-        data = json.load(f)
-    return data

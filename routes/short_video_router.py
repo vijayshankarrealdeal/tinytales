@@ -42,7 +42,7 @@ async def stream_video_by_id(video_id: int, request: Request, session: AsyncSess
         headers["Range"] = range_header
 
     try:
-        async with ClientSession() as http_session:
+        async with aiohttp.ClientSession() as http_session:
             async with http_session.get(video_url, headers=headers) as resp:
                 if resp.status not in (200, 206):
                     raise HTTPException(status_code=resp.status, detail="Failed to fetch video from Supabase")

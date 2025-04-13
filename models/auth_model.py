@@ -3,17 +3,21 @@ from pydantic import BaseModel, Field, EmailStr, field_validator, validator
 from pydantic_core import PydanticCustomError
 
 
+
 class UserBase(BaseModel):
     is_new_user: bool = Field(default=False)
-    email: EmailStr
+    email: str  # <-- use plain str for custom validation
 
     @field_validator("email")
-    def custom_email_error(cls, value: str):
+    @classmethod
+    def validate_email_field(cls, value: str) -> str:
+        from email_validator import validate_email, EmailNotValidError
         try:
-            return EmailStr.validate(value)
-        except ValueError:
+            validate_email(value)
+            return value
+        except EmailNotValidError:
             raise PydanticCustomError(
-                "value_error.email", "Please provide a valid email address."
+                "value_error.email", "Please enter a valid email address."
             )
 
 

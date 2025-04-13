@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship
 from db.db_connect import Base
-from sqlalchemy import Column, Integer, Text, ForeignKey, TIMESTAMP, func
+from sqlalchemy import Column, Boolean, Integer, Text, ForeignKey, TIMESTAMP, func
 
 
 class User(Base):
@@ -9,6 +9,9 @@ class User(Base):
     fullname = Column(Text, nullable=False)
     email = Column(Text, nullable=False, unique=True)
     password = Column(Text, nullable=False)
+    is_new_user = Column(Boolean, default=False)  # 1 for new user, 0 for existing user
+    gender = Column(Text, nullable=True)
+    dob = Column(Text, nullable=True)  # Date of birth
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

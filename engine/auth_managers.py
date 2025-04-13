@@ -7,9 +7,9 @@ from fastapi import HTTPException
 from passlib.context import CryptContext
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy import update
 from db.db_models import User
-from models.auth_model import UserLogin, UserRegister
+from models.auth_model import UserLogin, UserRegister, UserUpdate
 from db.db_connect import async_session
 
 
@@ -34,8 +34,40 @@ class AuthManager:
         try:
             query = select(User).where(User.id == user_id)
             user_data = await session.execute(query)
-            return user_data
+            return user_data.scalar_one_or_none()
         except HTTPException as e:
+            raise HTTPException(status_code=400, detail="Unkonwn error")
+
+    @staticmethod
+    async def delete_user(session, user_id):
+        try:
+            user_data = await AuthManager().get_user(user_id, session)
+            if not user_data:
+                raise HTTPException(status_code=404, detail="User not found")
+            await session.delete(user_data)
+            await session.commit()
+            return {"message": "User deleted successfully"}
+        except HTTPException as e:
+            await session.rollback()
+            raise HTTPException(status_code=400, detail="Unkonwn error")
+
+    @staticmethod
+    async def update_user(session, user_data: UserUpdate,  user_id: int):
+        try:
+            stmt = (
+            update(User)
+            .where(User.id == user_id)
+            .values(**user_data.model_dump(exclude_none=True))
+        )
+            await session.execute(stmt)
+            await session.commit()
+
+            # Refresh by fetching the updated user from DB
+            result = await session.execute(select(User).where(User.id == user_id))
+            updated_user = result.scalar_one_or_none()
+            return updated_user
+        except HTTPException as e:
+            await session.rollback()
             raise HTTPException(status_code=400, detail="Unkonwn error")
 
     async def register(self, user_data: UserRegister, session: AsyncSession):
@@ -51,7 +83,7 @@ class AuthManager:
             await session.refresh(user_data)
             return self.encode_token(user_data)
         except HTTPException as e:
-            session.rollback()
+            await session.rollback()
 
     async def login(self, user_data: UserLogin, session: AsyncSession):
         query = select(User).where(User.email == user_data.email)

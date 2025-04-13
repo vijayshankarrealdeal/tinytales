@@ -35,9 +35,8 @@ async def stream_video_by_id(video_id: int, request: Request, session: AsyncSess
     if not video_record or not video_record.url:
         raise HTTPException(status_code=404, detail="Video not found")
 
-    video_url = video_record.url
+    video_url = video_record.url.rstrip("?")
     headers = {}
-
     if range_header := request.headers.get("range"):
         headers["Range"] = range_header
 

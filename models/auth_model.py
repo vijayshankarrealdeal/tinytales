@@ -24,6 +24,8 @@ class UserBase(BaseModel):
 class UserRegister(UserBase):
     fullname: str
     password: str = Field(..., min_length=6, max_length=50)
+    gender: Optional[str] = None
+    dob: Optional[str] = None
 
     class Config:
         orm_mode = True

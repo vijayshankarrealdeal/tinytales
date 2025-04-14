@@ -5,15 +5,20 @@ from sqlalchemy import Column, Boolean, Integer, Text, ForeignKey, TIMESTAMP, fu
 
 class User(Base):
     __tablename__ = "users"
+
     id = Column(Integer, primary_key=True)
     fullname = Column(Text, nullable=False)
     email = Column(Text, nullable=False, unique=True)
     password = Column(Text, nullable=False)
-    is_new_user = Column(Boolean, default=False)  # 1 for new user, 0 for existing user
+    is_new_user = Column(Boolean, default=False)
     gender = Column(Text, nullable=True)
-    dob = Column(Text, nullable=True)  # Date of birth
+    dob = Column(Text, nullable=True)
+    age = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email={self.email})>"
 
 
 class Palette(Base):
@@ -30,10 +35,7 @@ class Palette(Base):
     warmest = Column(Text, nullable=False)
 
     def __repr__(self):
-        return (
-            f"<Palette(id={self.id}, predominant={self.predominant}, "
-            f"dark={self.dark}, light={self.light})>"
-        )
+        return f"<Palette(id={self.id}, predominant={self.predominant})>"
 
 
 class Story(Base):
@@ -41,16 +43,13 @@ class Story(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(Text, nullable=False)
-    poster = Column(Text)  # Poster image URL or path
-
-    # Use a foreign key and relationship named with "pallet"
+    poster = Column(Text)
     poster_pallet_id = Column(Integer, ForeignKey("palettes.id", ondelete="SET NULL"), nullable=True)
     poster_pallet = relationship("Palette", foreign_keys=[poster_pallet_id])
-
     created_at = Column(TIMESTAMP, server_default=func.now())
-
-    # One-to-many relationship to StoryChapter
     chapters = relationship("StoryChapter", back_populates="story", cascade="all, delete-orphan")
+    likes = Column(Integer, default=0)
+    saves = Column(Integer, default=0)
 
     def __repr__(self):
         return f"<Story(id={self.id}, title={self.title})>"
@@ -60,16 +59,13 @@ class StoryChapter(Base):
     __tablename__ = "story_chapters"
 
     id = Column(Integer, primary_key=True)
-    story_id = Column(Integer, ForeignKey("stories.id", ondelete="CASCADE"))
+    story_id = Column(Integer, ForeignKey("stories.id", ondelete="CASCADE"), nullable=False)
     chapter_index = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
-    image = Column(Text)  # Image URL or path
-
-    # Use a foreign key and relationship named "image_pallet"
+    image = Column(Text, nullable=True)
     image_pallet_id = Column(Integer, ForeignKey("palettes.id", ondelete="SET NULL"), nullable=True)
-    image_pallet = relationship("Palette", foreign_keys=[image_pallet_id])
 
-    # Back-reference to Story
+    image_pallet = relationship("Palette", foreign_keys=[image_pallet_id])
     story = relationship("Story", back_populates="chapters")
 
     def __repr__(self):
@@ -84,7 +80,59 @@ class ShortVideo(Base):
     url = Column(Text, nullable=False)
     views = Column(Integer, default=0)
     likes = Column(Integer, default=0)
-    filename = Column(Text, nullable=False)  # Filename or path to the video file
+    saves = Column(Integer, default=0)
+    filename = Column(Text, nullable=False)
 
     def __repr__(self):
         return f"<ShortVideo(id={self.id}, title={self.title})>"
+
+
+class UserLike(Base):
+    __tablename__ = "user_likes"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    short_video_id = Column(Integer, ForeignKey("short_videos.id", ondelete="CASCADE"), nullable=True)
+    story_id = Column(Integer, ForeignKey("stories.id", ondelete="CASCADE"), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User")
+    short_video = relationship("ShortVideo")
+    story = relationship("Story")
+
+    def __repr__(self):
+        return f"<UserLike(user_id={self.user_id}, video_id={self.short_video_id}, story_id={self.story_id})>"
+
+
+class UserSave(Base):
+    __tablename__ = "user_saves"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    short_video_id = Column(Integer, ForeignKey("short_videos.id", ondelete="CASCADE"), nullable=True)
+    story_id = Column(Integer, ForeignKey("stories.id", ondelete="CASCADE"), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User")
+    short_video = relationship("ShortVideo")
+    story = relationship("Story")
+
+    def __repr__(self):
+        return f"<UserSave(user_id={self.user_id}, video_id={self.short_video_id}, story_id={self.story_id})>"
+
+
+class UserView(Base):
+    __tablename__ = "user_views"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    short_video_id = Column(Integer, ForeignKey("short_videos.id", ondelete="CASCADE"), nullable=True)
+    story_id = Column(Integer, ForeignKey("stories.id", ondelete="CASCADE"), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User")
+    short_video = relationship("ShortVideo")
+    story = relationship("Story")
+
+    def __repr__(self):
+        return f"<UserView(user_id={self.user_id}, short_video_id={self.short_video_id}, story_id={self.story_id})>"

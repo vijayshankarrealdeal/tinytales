@@ -73,10 +73,16 @@ class AuthManager:
     async def register(self, user_data: UserRegister, session: AsyncSession):
         user_data.password = pwd_context.hash(user_data.password)
         try:
+            birth_date = datetime.strptime(user_data.dob, "%Y-%m-%d").date()
+            today = datetime.today().date()
+            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
             user_data = User(
                 fullname=user_data.fullname,
                 email=user_data.email,
                 password=user_data.password,
+                gender=user_data.gender,
+                dob=user_data.dob,
+                age=age
             )
             session.add(user_data)
             await session.commit()

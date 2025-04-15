@@ -1,8 +1,8 @@
 import datetime
 from sqlalchemy import case, func, desc, select
-from db.db_models import User, ShortVideo, Story, UserView, UserLike, UserSave
+from db.db_models import StoryChapter, User, ShortVideo, Story, UserView, UserLike, UserSave
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.orm import selectinload
 
 class AnalyticsManager:
 
@@ -158,7 +158,7 @@ class AnalyticsManager:
         return result.all()
 
     @staticmethod
-    async def recommend_stories_for_user(user_id: int, session: AsyncSession, limit=10):
+    async def recommend_stories_for_user(user_id: int, session, limit=10):
         user = await session.get(User, user_id)
         if not user or user.age is None:
             raise ValueError("User or age not found")
@@ -173,17 +173,18 @@ class AnalyticsManager:
             else_='C'
         )
 
-        # Get IDs already interacted with
+        # Exclude already interacted story IDs
         liked_ids = await session.execute(select(UserLike.story_id).where(UserLike.user_id == user_id))
         saved_ids = await session.execute(select(UserSave.story_id).where(UserSave.user_id == user_id))
         viewed_ids = await session.execute(select(UserView.story_id).where(UserView.user_id == user_id))
 
         excluded_ids = {
-            *{r[0] for r in liked_ids.fetchall()},
-            *{r[0] for r in saved_ids.fetchall()},
-            *{r[0] for r in viewed_ids.fetchall()}
+            *{r[0] for r in liked_ids.fetchall() if r[0]},
+            *{r[0] for r in saved_ids.fetchall() if r[0]},
+            *{r[0] for r in viewed_ids.fetchall() if r[0]},
         }
 
+        # Subqueries for scores
         view_subq = (
             select(
                 UserView.story_id,
@@ -233,6 +234,10 @@ class AnalyticsManager:
             .outerjoin(like_subq, Story.id == like_subq.c.story_id)
             .outerjoin(save_subq, Story.id == save_subq.c.story_id)
             .where(Story.id.not_in(excluded_ids))
+            .options(
+                selectinload(Story.poster_pallet),  # ⭐ Preload poster palette
+                selectinload(Story.chapters).selectinload(StoryChapter.image_pallet)  # ⭐ Deep preload chapter → palette
+            )
             .order_by(desc("score"))
             .limit(limit)
         )

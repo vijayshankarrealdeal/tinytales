@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
@@ -20,7 +20,7 @@ async def add_story(story: PayloadBaseIn, session: AsyncSession = Depends(get_db
 
 
 @story_router.get(
-    "/fetch_story",
+    "/fetch_story_by_id",
     status_code=status.HTTP_200_OK,
     response_model=List[PayloadBaseOut],
     dependencies=[Depends(oauth2_scheme)],
@@ -32,3 +32,17 @@ async def get_story(
     session: AsyncSession = Depends(get_db),
 ):
     return await StoryManager.fetch_story(session, story_id, offset, limit)
+
+@story_router.get(
+    "/fetch_story",
+    status_code=status.HTTP_200_OK,
+    response_model=List[PayloadBaseOut],
+    dependencies=[Depends(oauth2_scheme)],
+)
+async def get_story(
+    request: Request,
+    limit: int = Query(2, ge=1, le=100),
+    session: AsyncSession = Depends(get_db),
+):
+    user_id = request.state.user.id
+    return await StoryManager.get_recommended_stories(user_id, session, limit)

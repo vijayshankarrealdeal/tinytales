@@ -105,11 +105,11 @@ class StoryManager:
     
     @staticmethod
     async def get_recommended_stories(user_id, session, limit=10):
-        return await ContentRecommender.get_interleaved_recommendations(
+        return await ContentRecommender.get_interleaved_story_recommendations(
             user_id=user_id,
             session=session,
-            content_model=Story,
+            # content_model=Story,
             recommend_fn=AnalyticsManager.recommend_stories_for_user,
-            id_field_name="story_id",
+            # id_field_name="story_id",
             limit=limit
         )

@@ -109,9 +109,7 @@ class StoryManager:
         return await ContentRecommender.get_interleaved_story_recommendations(
             user_id=user_id,
             session=session,
-            # content_model=Story,
             recommend_fn=AnalyticsManager.recommend_stories_for_user,
-            # id_field_name="story_id",
             limit=limit
         )
 

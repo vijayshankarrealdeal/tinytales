@@ -10,12 +10,12 @@ class ShortVideoManager:
 
     @staticmethod
     async def get_short_video(user_id, offset, limit, session):
-        return await ContentRecommender.get_interleaved_recommendations(
+        return await ContentRecommender.get_interleaved_video_recommendations(
             user_id=user_id,
             session=session,
-            content_model=ShortVideo,
+            #content_model=ShortVideo,
             recommend_fn=AnalyticsManager.recommend_videos_for_user,
-            id_field_name="short_video_id",
+            #id_field_name="short_video_id",
             limit=limit
         )
 

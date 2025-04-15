@@ -1,37 +1,45 @@
-from db.db_models import ShortVideo
-from sqlalchemy.future import select
-from sqlalchemy import func
-
+from sqlalchemy import func, select, insert, delete
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from itertools import zip_longest
+from db.db_models import ShortVideo, UserLike, UserSave, UserView
+from engine.analytics_manager import AnalyticsManager
 from engine.utils import generate_random_ids
 
-
-from sqlalchemy import select, insert, delete
-from sqlalchemy.exc import IntegrityError
-from models import ShortVideo, UserLike, UserSave
-from utils import generate_random_ids  # your helper
 
 
 class ShortVideoManager:
 
     @staticmethod
-    async def get_short_video(offset, limit, session):
+    async def get_short_video(offset, limit, session: AsyncSession):
         try:
+            top_week_videos = await AnalyticsManager.get_age_weighted_top_videos_this_week(session, limit)
+            print("Top videos this week:", top_week_videos)
             result = await session.execute(
                 select(func.min(ShortVideo.id), func.max(ShortVideo.id))
             )
             min_id, max_id = result.first()
-            random_ids = generate_random_ids(min_id, max_id, limit)
+            random_ids = set(generate_random_ids(min_id, max_id, limit + len(top_week_videos)))
+            random_ids = random_ids - {video.id for video in top_week_videos}
+            random_ids = list(random_ids)
             query = select(ShortVideo).where(ShortVideo.id.in_(random_ids))
             short_video_data = await session.execute(query)
-            return short_video_data.scalars().all()
+            random_data = short_video_data.scalars().all()
+            data = []
+            for a, b in zip_longest(top_week_videos, random_data):
+                if a is not None:
+                    data.append(a)
+                if b is not None:
+                    data.append(b)
+            return data
+            
         except Exception:
             await session.rollback()
             raise
 
     @staticmethod
-    async def like_video(user_id: int, video_id: int, session):
+    async def like_video(user_id: int, video_id: int, session: AsyncSession):
         try:
-            # Check if already liked
             exists = await session.execute(
                 select(UserLike).where(
                     UserLike.user_id == user_id,
@@ -41,7 +49,6 @@ class ShortVideoManager:
             like = exists.scalar_one_or_none()
 
             if like:
-                # Unlike: remove record, decrement counter
                 await session.execute(
                     delete(UserLike).where(UserLike.id == like.id)
                 )
@@ -51,7 +58,6 @@ class ShortVideoManager:
                     .values(likes=ShortVideo.likes - 1)
                 )
             else:
-                # Like: add record, increment counter
                 await session.execute(
                     insert(UserLike).values(user_id=user_id, short_video_id=video_id)
                 )
@@ -68,7 +74,7 @@ class ShortVideoManager:
             raise e
 
     @staticmethod
-    async def save_video(user_id: int, video_id: int, session):
+    async def save_video(user_id: int, video_id: int, session: AsyncSession):
         try:
             exists = await session.execute(
                 select(UserSave).where(
@@ -79,7 +85,6 @@ class ShortVideoManager:
             save = exists.scalar_one_or_none()
 
             if save:
-                # Unsave
                 await session.execute(
                     delete(UserSave).where(UserSave.id == save.id)
                 )
@@ -89,7 +94,6 @@ class ShortVideoManager:
                     .values(saves=ShortVideo.saves - 1)
                 )
             else:
-                # Save
                 await session.execute(
                     insert(UserSave).values(user_id=user_id, short_video_id=video_id)
                 )
@@ -105,5 +109,18 @@ class ShortVideoManager:
             await session.rollback()
             raise e
 
-
-
+    @staticmethod
+    async def view_video(user_id: int, video_id: int, session: AsyncSession):
+        try:
+            await session.execute(
+                insert(UserView).values(user_id=user_id, short_video_id=video_id)
+            )
+            await session.execute(
+                ShortVideo.__table__.update()
+                .where(ShortVideo.id == video_id)
+                .values(views=ShortVideo.views + 1)
+            )
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            raise e

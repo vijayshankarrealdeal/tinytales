@@ -1,6 +1,7 @@
 from typing import Optional
 import jwt
-import datetime
+from datetime import datetime
+from datetime import timedelta
 from fastapi import Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException
@@ -20,7 +21,7 @@ class AuthManager:
     @staticmethod
     def encode_token(user_data):
         payload = {
-            "exp": datetime.datetime.now() + datetime.timedelta(days=12),
+            "exp": datetime.now() + timedelta(days=12),
             "sub": str(user_data.id),
         }
         try:

@@ -32,10 +32,11 @@ async def get_short_video(
     dependencies=[Depends(oauth2_scheme)],
 )
 async def like_unlike_video(
-    user_id: int,
+    request: Request,
     video_id: int,
     session: AsyncSession = Depends(get_db),
 ):
+    user_id = request.state.user.id
     await ShortVideoManager.like_video(user_id, video_id, session)
     return {"message": "Like/unlike updated successfully"}
 
@@ -46,10 +47,11 @@ async def like_unlike_video(
     dependencies=[Depends(oauth2_scheme)],
 )
 async def save_video(
-    user_id: int,
+    request: Request,
     video_id: int,
     session: AsyncSession = Depends(get_db),
 ):
+    user_id = request.state.user.id
     await ShortVideoManager.save_video(user_id, video_id, session)
     return {"message": "Save/unsave updated successfully"}
 
@@ -60,9 +62,10 @@ async def save_video(
     dependencies=[Depends(oauth2_scheme)],
 )
 async def view_video(
-    user_id: int,
+    request: Request,
     video_id: int,
     session: AsyncSession = Depends(get_db),
 ):
+    user_id = request.state.user.id
     await ShortVideoManager.view_video(user_id, video_id, session)
     return {"message": "View recorded successfully"}

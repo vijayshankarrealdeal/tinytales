@@ -3,10 +3,11 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from fastapi import HTTPException
-from db.db_models import Story, StoryChapter, Palette
+from db.db_models import Story, StoryChapter, Palette, UserLike, UserSave, UserView
 from engine.analytics_manager import AnalyticsManager
 from engine.content_recommender import ContentRecommender
 from models.payload_base import PayloadBaseIn, PayloadBaseOut
+from sqlalchemy import func, select, insert, delete
 
 
 class StoryManager:
@@ -113,3 +114,92 @@ class StoryManager:
             # id_field_name="story_id",
             limit=limit
         )
+
+
+    @staticmethod
+    async def like_story(user_id: int, story_id: int, session: AsyncSession):
+        try:
+            exists = await session.execute(
+                select(UserLike).where(
+                    UserLike.user_id == user_id,
+                    UserLike.story_id == story_id
+                )
+            )
+            like = exists.scalar_one_or_none()
+
+            if like:
+                await session.execute(
+                    delete(UserLike).where(UserLike.id == like.id)
+                )
+                await session.execute(
+                    Story.__table__.update()
+                    .where(Story.id == story_id)
+                    .values(likes=Story.likes - 1)
+                )
+            else:
+                await session.execute(
+                    insert(UserLike).values(user_id=user_id, story_id=story_id)
+                )
+                await session.execute(
+                    Story.__table__.update()
+                    .where(Story.id == story_id)
+                    .values(likes=Story.likes + 1)
+                )
+
+            await session.commit()
+
+        except Exception as e:
+            await session.rollback()
+            raise e
+
+    @staticmethod
+    async def save_story(user_id: int, story_id: int, session: AsyncSession):
+        try:
+            exists = await session.execute(
+                select(UserSave).where(
+                    UserSave.user_id == user_id,
+                    UserSave.story_id == story_id
+                )
+            )
+            save = exists.scalar_one_or_none()
+
+            if save:
+                await session.execute(
+                    delete(UserSave).where(UserSave.id == save.id)
+                )
+                await session.execute(
+                    Story.__table__.update()
+                    .where(Story.id == story_id)
+                    .values(saves=Story.saves - 1)
+                )
+            else:
+                await session.execute(
+                    insert(UserSave).values(user_id=user_id, story_id=story_id)
+                )
+                await session.execute(
+                    Story.__table__.update()
+                    .where(Story.id == story_id)
+                    .values(saves=Story.saves + 1)
+                )
+
+            await session.commit()
+
+        except Exception as e:
+            await session.rollback()
+            raise e
+
+    @staticmethod
+    async def view_story(user_id: int, story_id: int, session: AsyncSession):
+        try:
+            await session.execute(
+                insert(UserView).values(user_id=user_id, story_id=story_id)
+            )
+            await session.execute(
+                Story.__table__.update()
+                .where(Story.id == story_id)
+                .values(views=Story.views + 1)
+            )
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            raise e

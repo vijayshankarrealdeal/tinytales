@@ -25,7 +25,7 @@ async def add_story(story: PayloadBaseIn, session: AsyncSession = Depends(get_db
     response_model=List[PayloadBaseOut],
     dependencies=[Depends(oauth2_scheme)],
 )
-async def get_story(
+async def get_story_by_id(
     story_id: Optional[int] = None,
     offset: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
@@ -46,3 +46,49 @@ async def get_story(
 ):
     user_id = request.state.user.id
     return await StoryManager.get_recommended_stories(user_id, session, limit)
+
+
+
+@story_router.post(
+    "/like_unlike_story",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(oauth2_scheme)],
+)
+async def like_unlike_stories(
+    request: Request,
+    story_id: int,
+    session: AsyncSession = Depends(get_db),
+):
+    user_id = request.state.user.id
+    await StoryManager.like_story(user_id, story_id, session)
+    return {"message": "Like/unlike updated successfully"}
+
+
+@story_router.post(
+    "/save_story",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(oauth2_scheme)],
+)
+async def save_stories(
+    request: Request,
+    story_id: int,
+    session: AsyncSession = Depends(get_db),
+):
+    user_id = request.state.user.id
+    await StoryManager.save_story(user_id, story_id, session)
+    return {"message": "Save/unsave updated successfully"}
+
+
+@story_router.post(
+    "/view_story",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(oauth2_scheme)],
+)
+async def view_stories(
+    request: Request,
+    story_id: int,
+    session: AsyncSession = Depends(get_db),
+):
+    user_id = request.state.user.id
+    await StoryManager.view_story(user_id, story_id, session)
+    return {"message": "View recorded successfully"}

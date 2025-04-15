@@ -1,10 +1,9 @@
 from sqlalchemy import func, select, insert, delete
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.db_models import ShortVideo, UserLike, UserSave, UserView
 from engine.analytics_manager import AnalyticsManager
 from engine.content_recommender import ContentRecommender
-from engine.utils import generate_random_ids
+
 
 
 class ShortVideoManager:

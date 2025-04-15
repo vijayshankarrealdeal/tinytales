@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship
 from db.db_connect import Base
-from sqlalchemy import Column, Boolean, Integer, Text, ForeignKey, TIMESTAMP, func
+from sqlalchemy import ARRAY, Column, Boolean, Integer, Text, ForeignKey, TIMESTAMP, func
 
 
 class User(Base):
@@ -50,6 +50,7 @@ class Story(Base):
     chapters = relationship("StoryChapter", back_populates="story", cascade="all, delete-orphan")
     likes = Column(Integer, default=0)
     saves = Column(Integer, default=0)
+    tags = Column(ARRAY(Text), nullable=True)
 
     def __repr__(self):
         return f"<Story(id={self.id}, title={self.title})>"
@@ -82,6 +83,8 @@ class ShortVideo(Base):
     likes = Column(Integer, default=0)
     saves = Column(Integer, default=0)
     filename = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    tags = Column(ARRAY(Text), nullable=True)
 
     def __repr__(self):
         return f"<ShortVideo(id={self.id}, title={self.title})>"

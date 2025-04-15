@@ -1,8 +1,8 @@
 from typing import List
-from fastapi import APIRouter, Query, status, Depends
+from fastapi import APIRouter, Query, Request, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.db_connect import get_db
-from engine.short_video import ShortVideoManager
+from engine.short_video_manager import ShortVideoManager
 from models.short_video_model import ShortVideoOutput
 from engine.auth_managers import oauth2_scheme
 
@@ -16,11 +16,13 @@ short_video_router = APIRouter(tags=["short_video"])
     dependencies=[Depends(oauth2_scheme)],
 )
 async def get_short_video(
+    request: Request,
     offset: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(10, ge=1, le=100, description="Max records to return"),
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_db)
 ):
-    videos = await ShortVideoManager.get_short_video(offset, limit, session)
+    user_id = request.state.user.id
+    videos = await ShortVideoManager.get_short_video(user_id, offset, limit, session)
     return videos
 
 

@@ -12,7 +12,7 @@ class ShortVideoOutput(BaseModel):
     url: str
     views: int
     likes: int
-    #saves: int
+    saves: Optional[int] = 0
     is_liked: Optional[bool] = False
     is_saved: Optional[bool] = False
     is_viewed: Optional[bool] = False

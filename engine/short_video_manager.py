@@ -1,4 +1,4 @@
-from sqlalchemy import func, select, insert, delete
+from sqlalchemy import func, select, insert, delete, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.db_models import ShortVideo, UserLike, UserSave, UserView
 from engine.analytics_manager import AnalyticsManager
@@ -38,7 +38,7 @@ class ShortVideoManager:
                 await session.execute(
                     ShortVideo.__table__.update()
                     .where(ShortVideo.id == video_id)
-                    .values(likes=ShortVideo.likes - 1)
+                    .values(likes=text("likes - 1"))
                 )
             else:
                 await session.execute(
@@ -47,7 +47,7 @@ class ShortVideoManager:
                 await session.execute(
                     ShortVideo.__table__.update()
                     .where(ShortVideo.id == video_id)
-                    .values(likes=ShortVideo.likes + 1)
+                    .values(likes=text("likes + 1"))
                 )
 
             await session.commit()
@@ -55,6 +55,7 @@ class ShortVideoManager:
         except Exception as e:
             await session.rollback()
             raise e
+
 
     @staticmethod
     async def save_video(user_id: int, video_id: int, session: AsyncSession):
@@ -74,7 +75,7 @@ class ShortVideoManager:
                 await session.execute(
                     ShortVideo.__table__.update()
                     .where(ShortVideo.id == video_id)
-                    .values(saves=ShortVideo.saves - 1)
+                    .values(saves=text("saves - 1"))
                 )
             else:
                 await session.execute(
@@ -83,7 +84,7 @@ class ShortVideoManager:
                 await session.execute(
                     ShortVideo.__table__.update()
                     .where(ShortVideo.id == video_id)
-                    .values(saves=ShortVideo.saves + 1)
+                    .values(saves=text("saves + 1"))
                 )
 
             await session.commit()
@@ -91,6 +92,7 @@ class ShortVideoManager:
         except Exception as e:
             await session.rollback()
             raise e
+
 
     @staticmethod
     async def view_video(user_id: int, video_id: int, session: AsyncSession):
@@ -101,9 +103,10 @@ class ShortVideoManager:
             await session.execute(
                 ShortVideo.__table__.update()
                 .where(ShortVideo.id == video_id)
-                .values(views=ShortVideo.views + 1)
+                .values(views=text("views + 1"))
             )
             await session.commit()
         except Exception as e:
             await session.rollback()
             raise e
+

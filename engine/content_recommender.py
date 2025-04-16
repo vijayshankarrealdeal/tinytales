@@ -16,7 +16,7 @@ class ContentRecommender:
 
         exclude_ids = {
             *{r[0] for r in liked_ids.fetchall() if r[0]},
-            *{r[0] for r in saved_ids.fetchall() if r[0]},
+            #*{r[0] for r in saved_ids.fetchall() if r[0]},
             *{r[0] for r in viewed_ids.fetchall() if r[0]},
         }
 

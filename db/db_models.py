@@ -83,6 +83,7 @@ class ShortVideo(Base):
     views = Column(Integer, default=0, nullable=False)
     likes = Column(Integer, default=0, nullable=False)
     saves = Column(Integer, default=0, nullable=False)
+    thumbnail = Column(Text, nullable=False, server_default="")
     filename = Column(Text, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
     tags = Column(ARRAY(Text), nullable=True)

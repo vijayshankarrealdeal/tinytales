@@ -122,14 +122,28 @@ class ShortVideoManager:
                     ShortVideo.thumbnail,
                     ShortVideo.saves,
                     case(
-                        (exists().where((LikeAlias.user_id == user_id) & (LikeAlias.short_video_id == ShortVideo.id)), True),
+                        (
+                            exists().where(
+                                (LikeAlias.user_id == user_id)
+                                & (LikeAlias.short_video_id == ShortVideo.id)
+                            ),
+                            True,
+                        ),
                         else_=False,
                     ).label("is_liked"),
                     case(
-                        (exists().where((ViewAlias.user_id == user_id) & (ViewAlias.short_video_id == ShortVideo.id)), True),
+                        (
+                            exists().where(
+                                (ViewAlias.user_id == user_id)
+                                & (ViewAlias.short_video_id == ShortVideo.id)
+                            ),
+                            True,
+                        ),
                         else_=False,
                     ).label("is_viewed"),
-                    literal(True).label("is_saved")  # These are saved videos, so always True
+                    literal(True).label(
+                        "is_saved"
+                    ),  # These are saved videos, so always True
                 )
                 .join(SaveAlias, ShortVideo.id == SaveAlias.short_video_id)
                 .where(SaveAlias.user_id == user_id)
@@ -139,7 +153,6 @@ class ShortVideoManager:
 
             result = await session.execute(stmt)
             rows = result.all()
-
             return [
                 {
                     "id": r.id,

@@ -5,7 +5,6 @@ from engine.analytics_manager import AnalyticsManager
 from engine.content_recommender import ContentRecommender
 
 
-
 class ShortVideoManager:
 
     @staticmethod
@@ -13,28 +12,24 @@ class ShortVideoManager:
         return await ContentRecommender.get_interleaved_video_recommendations(
             user_id=user_id,
             session=session,
-            #content_model=ShortVideo,
+            # content_model=ShortVideo,
             recommend_fn=AnalyticsManager.recommend_videos_for_user,
-            #id_field_name="short_video_id",
-            limit=limit
+            # id_field_name="short_video_id",
+            limit=limit,
         )
-
 
     @staticmethod
     async def like_video(user_id: int, video_id: int, session: AsyncSession):
         try:
             exists = await session.execute(
                 select(UserLike).where(
-                    UserLike.user_id == user_id,
-                    UserLike.short_video_id == video_id
+                    UserLike.user_id == user_id, UserLike.short_video_id == video_id
                 )
             )
             like = exists.scalar_one_or_none()
 
             if like:
-                await session.execute(
-                    delete(UserLike).where(UserLike.id == like.id)
-                )
+                await session.execute(delete(UserLike).where(UserLike.id == like.id))
                 await session.execute(
                     ShortVideo.__table__.update()
                     .where(ShortVideo.id == video_id)
@@ -56,22 +51,18 @@ class ShortVideoManager:
             await session.rollback()
             raise e
 
-
     @staticmethod
     async def save_video(user_id: int, video_id: int, session: AsyncSession):
         try:
             exists = await session.execute(
                 select(UserSave).where(
-                    UserSave.user_id == user_id,
-                    UserSave.short_video_id == video_id
+                    UserSave.user_id == user_id, UserSave.short_video_id == video_id
                 )
             )
             save = exists.scalar_one_or_none()
 
             if save:
-                await session.execute(
-                    delete(UserSave).where(UserSave.id == save.id)
-                )
+                await session.execute(delete(UserSave).where(UserSave.id == save.id))
                 await session.execute(
                     ShortVideo.__table__.update()
                     .where(ShortVideo.id == video_id)
@@ -93,7 +84,6 @@ class ShortVideoManager:
             await session.rollback()
             raise e
 
-
     @staticmethod
     async def view_video(user_id: int, video_id: int, session: AsyncSession):
         try:
@@ -110,3 +100,14 @@ class ShortVideoManager:
             await session.rollback()
             raise e
 
+    @staticmethod
+    async def get_saved_videos(
+        user_id: int, offset: int, limit: int, session: AsyncSession
+    ):
+        try:
+            result = await session.execute(
+                select(ShortVideo).join(UserSave).where(UserSave.user_id == user_id).offset(offset).limit(limit)
+            )
+            return result.scalars().all()
+        except Exception as e:
+            raise e

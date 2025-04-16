@@ -69,3 +69,14 @@ async def view_video(
     user_id = request.state.user.id
     await ShortVideoManager.view_video(user_id, video_id, session)
     return {"message": "View recorded successfully"}
+
+@short_video_router.get("/saved_videos", status_code=status.HTTP_200_OK, dependencies=[Depends(oauth2_scheme)])
+async def get_saved_videos(
+    request: Request,
+    offset: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(10, ge=1, le=100, description="Max records to return"),
+    session: AsyncSession = Depends(get_db),
+):
+    user_id = request.state.user.id
+    videos = await ShortVideoManager.get_saved_videos(user_id, offset, limit, session)
+    return videos 

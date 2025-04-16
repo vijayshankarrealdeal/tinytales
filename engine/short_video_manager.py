@@ -1,8 +1,10 @@
-from sqlalchemy import func, select, insert, delete, text
+from sqlalchemy import func, select, insert, delete, text, exists, case, literal
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.db_models import ShortVideo, UserLike, UserSave, UserView
 from engine.analytics_manager import AnalyticsManager
 from engine.content_recommender import ContentRecommender
+
+from sqlalchemy.orm import aliased
 
 
 class ShortVideoManager:
@@ -105,9 +107,54 @@ class ShortVideoManager:
         user_id: int, offset: int, limit: int, session: AsyncSession
     ):
         try:
-            result = await session.execute(
-                select(ShortVideo).join(UserSave).where(UserSave.user_id == user_id).offset(offset).limit(limit)
+            # Aliases for joins
+            LikeAlias = aliased(UserLike)
+            ViewAlias = aliased(UserView)
+            SaveAlias = aliased(UserSave)
+
+            stmt = (
+                select(
+                    ShortVideo.id,
+                    ShortVideo.title,
+                    ShortVideo.url,
+                    ShortVideo.views,
+                    ShortVideo.likes,
+                    ShortVideo.thumbnail,
+                    ShortVideo.saves,
+                    case(
+                        (exists().where((LikeAlias.user_id == user_id) & (LikeAlias.short_video_id == ShortVideo.id)), True),
+                        else_=False,
+                    ).label("is_liked"),
+                    case(
+                        (exists().where((ViewAlias.user_id == user_id) & (ViewAlias.short_video_id == ShortVideo.id)), True),
+                        else_=False,
+                    ).label("is_viewed"),
+                    literal(True).label("is_saved")  # These are saved videos, so always True
+                )
+                .join(SaveAlias, ShortVideo.id == SaveAlias.short_video_id)
+                .where(SaveAlias.user_id == user_id)
+                .offset(offset)
+                .limit(limit)
             )
-            return result.scalars().all()
+
+            result = await session.execute(stmt)
+            rows = result.all()
+
+            return [
+                {
+                    "id": r.id,
+                    "title": r.title,
+                    "url": r.url,
+                    "views": r.views,
+                    "likes": r.likes,
+                    "thumbnail": r.thumbnail,
+                    "saves": r.saves,
+                    "is_liked": r.is_liked,
+                    "is_saved": r.is_saved,
+                    "is_viewed": r.is_viewed,
+                }
+                for r in rows
+            ]
+
         except Exception as e:
             raise e
